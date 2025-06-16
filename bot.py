@@ -21,6 +21,13 @@ class Gotchipus:
                 "outputs": [],
                 "stateMutability": "nonpayable",
                 "type": "function"
+            },
+            {
+                "inputs":[],
+                "name":"claimWearable",
+                "outputs":[],
+                "stateMutability":"nonpayable",
+                "type":"function"
             }
         ]
         self.proxies = []
@@ -150,7 +157,7 @@ class Gotchipus:
             return token_balance
         except Exception as e:
             self.log(
-                f"{Fore.CYAN+Style.BRIGHT}Message :{Style.RESET_ALL}"
+                f"{Fore.CYAN+Style.BRIGHT}   Message :{Style.RESET_ALL}"
                 f"{Fore.RED+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
             )
             return None
@@ -186,12 +193,69 @@ class Gotchipus:
             return tx_hash, block_number
         except Exception as e:
             self.log(
-                f"{Fore.CYAN+Style.BRIGHT}Message :{Style.RESET_ALL}"
+                f"{Fore.CYAN+Style.BRIGHT}   Message :{Style.RESET_ALL}"
+                f"{Fore.RED+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
+            )
+            return None, None
+        
+    async def perform_claim_wearable(self, account: str, address: str, use_proxy: bool):
+        try:
+            web3 = await self.get_web3_with_check(address, use_proxy)
+
+            contract_address = web3.to_checksum_address(self.NFT_CONTRACT_ADDRESS)
+            token_contract = web3.eth.contract(address=contract_address, abi=self.MINT_CONTRACT_ABI)
+
+            mint_data = token_contract.functions.claimWearable()
+            estimated_gas = mint_data.estimate_gas({"from": address})
+
+            max_priority_fee = web3.to_wei(1, "gwei")
+            max_fee = max_priority_fee
+
+            mint_tx = mint_data.build_transaction({
+                "from": address,
+                "gas": int(estimated_gas * 1.2),
+                "maxFeePerGas": int(max_fee),
+                "maxPriorityFeePerGas": int(max_priority_fee),
+                "nonce": web3.eth.get_transaction_count(address, "pending"),
+                "chainId": web3.eth.chain_id,
+            })
+
+            signed_tx = web3.eth.account.sign_transaction(mint_tx, account)
+            raw_tx = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            tx_hash = web3.to_hex(raw_tx)
+            receipt = await asyncio.to_thread(web3.eth.wait_for_transaction_receipt, tx_hash, timeout=300)
+            block_number = receipt.blockNumber
+
+            return tx_hash, block_number
+        except Exception as e:
+            self.log(
+                f"{Fore.CYAN+Style.BRIGHT}   Message :{Style.RESET_ALL}"
                 f"{Fore.RED+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
             )
             return None, None
         
     def print_question(self):
+        while True:
+            try:
+                print(f"{Fore.GREEN + Style.BRIGHT}Select Option:{Style.RESET_ALL}")
+                print(f"{Fore.WHITE + Style.BRIGHT}1. Mint Gotchipus NFT{Style.RESET_ALL}")
+                print(f"{Fore.WHITE + Style.BRIGHT}2. Claim Wearable{Style.RESET_ALL}")
+                print(f"{Fore.WHITE + Style.BRIGHT}3. Run All Features{Style.RESET_ALL}")
+                option = int(input(f"{Fore.BLUE + Style.BRIGHT}Choose [1/2/3] -> {Style.RESET_ALL}").strip())
+
+                if option in [1, 2, 3]:
+                    option_type = (
+                        "Mint Gotchipus NFT" if option == 1 else 
+                        "Claim Wearable" if option == 2 else 
+                        "Run All Features"
+                    )
+                    print(f"{Fore.GREEN + Style.BRIGHT}{option_type} Selected.{Style.RESET_ALL}")
+                    break
+                else:
+                    print(f"{Fore.RED + Style.BRIGHT}Please enter either 1, 2, or 3.{Style.RESET_ALL}")
+            except ValueError:
+                print(f"{Fore.RED + Style.BRIGHT}Invalid input. Enter a number (1, 2, or 3).{Style.RESET_ALL}")
+
         while True:
             try:
                 print(f"{Fore.WHITE + Style.BRIGHT}1. Run With Free Proxyscrape Proxy{Style.RESET_ALL}")
@@ -206,11 +270,13 @@ class Gotchipus:
                         "Without"
                     )
                     print(f"{Fore.GREEN + Style.BRIGHT}Run {proxy_type} Proxy Selected.{Style.RESET_ALL}")
-                    return choose
+                    break
                 else:
                     print(f"{Fore.RED + Style.BRIGHT}Please enter either 1, 2 or 3.{Style.RESET_ALL}")
             except ValueError:
                 print(f"{Fore.RED + Style.BRIGHT}Invalid input. Enter a number (1, 2 or 3).{Style.RESET_ALL}")
+
+        return option, choose
     
     async def process_perform_mint_nft(self, account: str, address: str, use_proxy: bool):
         tx_hash, block_number = await self.perform_mint_nft(account, address, use_proxy)
@@ -218,55 +284,146 @@ class Gotchipus:
             explorer = f"https://testnet.pharosscan.xyz/tx/{tx_hash}"
 
             self.log(
-                f"{Fore.CYAN+Style.BRIGHT}Status  :{Style.RESET_ALL}"
+                f"{Fore.CYAN+Style.BRIGHT}   Status  :{Style.RESET_ALL}"
                 f"{Fore.GREEN+Style.BRIGHT} Success {Style.RESET_ALL}"
             )
             self.log(
-                f"{Fore.CYAN+Style.BRIGHT}Block   :{Style.RESET_ALL}"
+                f"{Fore.CYAN+Style.BRIGHT}   Block   :{Style.RESET_ALL}"
                 f"{Fore.WHITE+Style.BRIGHT} {block_number} {Style.RESET_ALL}"
             )
             self.log(
-                f"{Fore.CYAN+Style.BRIGHT}Tx Hash :{Style.RESET_ALL}"
+                f"{Fore.CYAN+Style.BRIGHT}   Tx Hash :{Style.RESET_ALL}"
                 f"{Fore.WHITE+Style.BRIGHT} {tx_hash} {Style.RESET_ALL}"
             )
             self.log(
-                f"{Fore.CYAN+Style.BRIGHT}Explorer:{Style.RESET_ALL}"
+                f"{Fore.CYAN+Style.BRIGHT}   Explorer:{Style.RESET_ALL}"
                 f"{Fore.WHITE+Style.BRIGHT} {explorer} {Style.RESET_ALL}"
             )
         else:
             self.log(
-                f"{Fore.CYAN+Style.BRIGHT}Status  :{Style.RESET_ALL}"
+                f"{Fore.CYAN+Style.BRIGHT}   Status  :{Style.RESET_ALL}"
                 f"{Fore.RED+Style.BRIGHT} Perform On-Chain Failed {Style.RESET_ALL}"
             )
 
-    async def process_accounts(self, account: str, address: str, use_proxy):
+    async def process_perform_claim_wearable(self, account: str, address: str, use_proxy: bool):
+        tx_hash, block_number = await self.perform_claim_wearable(account, address, use_proxy)
+        if tx_hash and block_number:
+            explorer = f"https://testnet.pharosscan.xyz/tx/{tx_hash}"
+
+            self.log(
+                f"{Fore.CYAN+Style.BRIGHT}   Status  :{Style.RESET_ALL}"
+                f"{Fore.GREEN+Style.BRIGHT} Success {Style.RESET_ALL}"
+            )
+            self.log(
+                f"{Fore.CYAN+Style.BRIGHT}   Block   :{Style.RESET_ALL}"
+                f"{Fore.WHITE+Style.BRIGHT} {block_number} {Style.RESET_ALL}"
+            )
+            self.log(
+                f"{Fore.CYAN+Style.BRIGHT}   Tx Hash :{Style.RESET_ALL}"
+                f"{Fore.WHITE+Style.BRIGHT} {tx_hash} {Style.RESET_ALL}"
+            )
+            self.log(
+                f"{Fore.CYAN+Style.BRIGHT}   Explorer:{Style.RESET_ALL}"
+                f"{Fore.WHITE+Style.BRIGHT} {explorer} {Style.RESET_ALL}"
+            )
+        else:
+            self.log(
+                f"{Fore.CYAN+Style.BRIGHT}   Status  :{Style.RESET_ALL}"
+                f"{Fore.RED+Style.BRIGHT} Perform On-Chain Failed {Style.RESET_ALL}"
+            )
+
+    async def process_option_1(self, account: str, address: str, use_proxy):
+        self.log(
+            f"{Fore.MAGENTA+Style.BRIGHT} ● {Style.RESET_ALL}"
+            f"{Fore.GREEN+Style.BRIGHT}NFT{Style.RESET_ALL}"
+        )
         balance = await self.get_token_balance(address, use_proxy)
         fees = 0.000355
 
         self.log(
-            f"{Fore.CYAN+Style.BRIGHT}Balance :{Style.RESET_ALL}"
+            f"{Fore.CYAN+Style.BRIGHT}   Balance :{Style.RESET_ALL}"
             f"{Fore.WHITE+Style.BRIGHT} {balance} PHRS {Style.RESET_ALL}"
         )
         self.log(
-            f"{Fore.CYAN+Style.BRIGHT}Mint Fee:{Style.RESET_ALL}"
+            f"{Fore.CYAN+Style.BRIGHT}   Mint Fee:{Style.RESET_ALL}"
             f"{Fore.WHITE+Style.BRIGHT} {fees} PHRS {Style.RESET_ALL}"
         )
 
         if not balance or balance <=  fees:
             self.log(
-                f"{Fore.CYAN+Style.BRIGHT}Status  :{Style.RESET_ALL}"
+                f"{Fore.CYAN+Style.BRIGHT}   Status  :{Style.RESET_ALL}"
                 f"{Fore.YELLOW+Style.BRIGHT} Insufficient PHRS Token Balance {Style.RESET_ALL}"
             )
             return
         
         await self.process_perform_mint_nft(account, address, use_proxy)
 
+    async def process_option_2(self, account: str, address: str, use_proxy):
+        self.log(
+            f"{Fore.MAGENTA+Style.BRIGHT} ● {Style.RESET_ALL}"
+            f"{Fore.GREEN+Style.BRIGHT}Wearable{Style.RESET_ALL}"
+        )
+        balance = await self.get_token_balance(address, use_proxy)
+        fees = 0.0007
+        self.log(
+            f"{Fore.CYAN+Style.BRIGHT}   Balance :{Style.RESET_ALL}"
+            f"{Fore.WHITE+Style.BRIGHT} {balance} PHRS {Style.RESET_ALL}"
+        )
+        self.log(
+            f"{Fore.CYAN+Style.BRIGHT}   Mint Fee:{Style.RESET_ALL}"
+            f"{Fore.WHITE+Style.BRIGHT} {fees} PHRS {Style.RESET_ALL}"
+        )
+
+        if not balance or balance <=  fees:
+            self.log(
+                f"{Fore.CYAN+Style.BRIGHT}   Status  :{Style.RESET_ALL}"
+                f"{Fore.YELLOW+Style.BRIGHT} Insufficient PHRS Token Balance {Style.RESET_ALL}"
+            )
+            return
+        
+        await self.process_perform_claim_wearable(account, address, use_proxy)
+
+    async def process_accounts(self, account: str, address: str, option: int, use_proxy):
+        proxy = self.get_next_proxy_for_account(address) if use_proxy else None
+        self.log(
+            f"{Fore.CYAN+Style.BRIGHT}Proxy   :{Style.RESET_ALL}"
+            f"{Fore.WHITE+Style.BRIGHT} {proxy} {Style.RESET_ALL}"
+        )
+            
+        if option == 1:
+            self.log(
+                f"{Fore.CYAN+Style.BRIGHT}Option  :{Style.RESET_ALL}"
+                f"{Fore.BLUE+Style.BRIGHT} Mint Gotchipus NFT {Style.RESET_ALL}"
+            )
+            
+            await self.process_option_1(account, address, use_proxy)
+
+        if option == 2:
+            self.log(
+                f"{Fore.CYAN+Style.BRIGHT}Option  :{Style.RESET_ALL}"
+                f"{Fore.BLUE+Style.BRIGHT} Claim Wearable {Style.RESET_ALL}"
+            )
+            
+            await self.process_option_2(account, address, use_proxy)
+
+        else:
+            self.log(
+                f"{Fore.CYAN+Style.BRIGHT}Option  :{Style.RESET_ALL}"
+                f"{Fore.BLUE+Style.BRIGHT} Run All Features {Style.RESET_ALL}"
+            )
+            
+            await self.process_option_1(account, address, use_proxy)
+            await asyncio.sleep(5)
+
+            await self.process_option_2(account, address, use_proxy)
+            await asyncio.sleep(5)
+
     async def main(self):
         try:
             with open('accounts.txt', 'r') as file:
                 accounts = [line.strip() for line in file if line.strip()]
             
-            use_proxy_choice = self.print_question()
+            option, use_proxy_choice = self.print_question()
 
             while True:
                 use_proxy = False
@@ -301,7 +458,7 @@ class Gotchipus:
                             )
                             continue
 
-                        await self.process_accounts(account, address, use_proxy)
+                        await self.process_accounts(account, address, option, use_proxy)
                         await asyncio.sleep(3)
 
                 self.log(f"{Fore.CYAN + Style.BRIGHT}={Style.RESET_ALL}"*72)

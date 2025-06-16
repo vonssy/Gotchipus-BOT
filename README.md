@@ -12,6 +12,7 @@ Gotchipus BOT
   - Auto Run Without Proxy - `Choose 3`
   - Auto Rotate Invalid Proxies - `y` or `n`
   - Auto Mint Gotchipus NFT
+  - Auto Claim Wearable
   - Multi Accounts
 
 ## Requiremnets
