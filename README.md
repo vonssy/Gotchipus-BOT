@@ -11,6 +11,7 @@ Gotchipus BOT
   - Auto Run With Private Proxy - `Choose 2`
   - Auto Run Without Proxy - `Choose 3`
   - Auto Rotate Invalid Proxies - `y` or `n`
+  - Auto Claim Daily Check-In
   - Auto Mint Gotchipus NFT
   - Auto Claim Wearable
   - Multi Accounts
@@ -34,7 +35,7 @@ Gotchipus BOT
    pip install -r requirements.txt #or pip3 install -r requirements.txt
    ```
 
-### Note: Check your web3 and eth-account library version first. If not same with version in requirements.txt, u must uninstall that library.
+### Note: Check your web3, eth-utils, eth-abi and eth-account library version first. If not same with version in requirements.txt, u must uninstall that library.
 - **Check Library Version**
   ```bash
     pip show libary_name
