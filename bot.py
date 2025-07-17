@@ -570,14 +570,14 @@ class Gotchipus:
                 if verified and verified.get("code") == 0:
                     self.log(
                         f"{Fore.CYAN+Style.BRIGHT}   Verify  :{Style.RESET_ALL}"
-                        f"{Fore.GREEN+Style.BRIGHT}Success{Style.RESET_ALL}"
+                        f"{Fore.GREEN+Style.BRIGHT} Success {Style.RESET_ALL}"
                     )
 
                     claim = await self.claim_checkin(address, proxy)
                     if claim and claim.get("code") == 0:
                         self.log(
                             f"{Fore.CYAN+Style.BRIGHT}   Status  :{Style.RESET_ALL}"
-                            f"{Fore.GREEN+Style.BRIGHT}Claimed Successfully{Style.RESET_ALL}"
+                            f"{Fore.GREEN+Style.BRIGHT} Claimed Successfully {Style.RESET_ALL}"
                         )
                     elif claim and claim.get("code") == 1:
                         err_msg = claim.get("message", "Unknown Error")
@@ -614,14 +614,14 @@ class Gotchipus:
                 if verified and verified.get("code") == 0:
                     self.log(
                         f"{Fore.CYAN+Style.BRIGHT}   Verify  :{Style.RESET_ALL}"
-                        f"{Fore.GREEN+Style.BRIGHT}Success{Style.RESET_ALL}"
+                        f"{Fore.GREEN+Style.BRIGHT} Success {Style.RESET_ALL}"
                     )
 
                     claim = await self.claim_checkin(address, proxy)
                     if claim and claim.get("code") == 0:
                         self.log(
                             f"{Fore.CYAN+Style.BRIGHT}   Status  :{Style.RESET_ALL}"
-                            f"{Fore.GREEN+Style.BRIGHT}Claimed Successfully{Style.RESET_ALL}"
+                            f"{Fore.GREEN+Style.BRIGHT} Claimed Successfully {Style.RESET_ALL}"
                         )
                     elif claim and claim.get("code") == 1:
                         err_msg = claim.get("message", "Unknown Error")
